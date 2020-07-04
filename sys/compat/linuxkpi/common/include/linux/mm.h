@@ -219,7 +219,12 @@ mark_page_accessed(struct vm_page *page)
 static inline void
 get_page(struct vm_page *page)
 {
-	vm_page_wire(page);
+
+	/* XXX-BZ FIXME vm assertion workaround. */
+	if (page->object != NULL)
+		vm_page_wire(page);
+	else
+		atomic_fetchadd_int(&page->ref_count, 1);
 }
 
 extern long
@@ -240,7 +245,12 @@ get_user_pages_remote(struct task_struct *, struct mm_struct *,
 static inline void
 put_page(struct vm_page *page)
 {
-	vm_page_unwire(page, PQ_ACTIVE);
+
+	/* XXX-BZ FIXME vm assertion workaround. */
+	if (page->object != NULL)
+		vm_page_unwire(page, PQ_ACTIVE);
+	else
+		atomic_fetchadd_int(&page->ref_count, -1);
 }
 
 #define	copy_highpage(to, from) pmap_copy_page(from, to)

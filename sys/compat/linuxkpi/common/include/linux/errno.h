@@ -58,5 +58,6 @@
 #define	EBADTYPE	527
 #define	EJUKEBOX	528
 #define	EIOCBQUEUED	529
+#define	ERFKILL		530
 
 #endif					/* _LINUX_ERRNO_H_ */

@@ -161,4 +161,11 @@ linux_timer_jiffies_until(int expires)
 	return (delta);
 }
 
+static __inline bool
+time_is_after_jiffies(unsigned long _t)
+{
+
+	return (_t > jiffies);
+}
+
 #endif	/* _LINUX_JIFFIES_H_ */

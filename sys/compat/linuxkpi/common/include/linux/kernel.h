@@ -89,13 +89,16 @@
 #define	U64_C(x) x ## ULL
 
 #define	BUILD_BUG()			do { CTASSERT(0); } while (0)
-#define	BUILD_BUG_ON(x)			CTASSERT(!(x))
+#define	BUILD_BUG_ON(x)			/* CTASSERT(!(x)) */
 #define	BUILD_BUG_ON_MSG(x, msg)	BUILD_BUG_ON(x)
 #define	BUILD_BUG_ON_NOT_POWER_OF_2(x)	BUILD_BUG_ON(!powerof2(x))
 #define	BUILD_BUG_ON_INVALID(expr)	while (0) { (void)(expr); }
-
 extern const volatile int lkpi_build_bug_on_zero;
 #define	BUILD_BUG_ON_ZERO(x)	((x) ? lkpi_build_bug_on_zero : 0)
+
+#ifndef	IS_ENABLED
+#define	IS_ENABLED(x)			(x)
+#endif
 
 #define	BUG()			panic("BUG at %s:%d", __FILE__, __LINE__)
 #define	BUG_ON(cond)		do {				\
@@ -499,6 +502,10 @@ kstrtobool_from_user(const char __user *s, size_t count, bool *res)
 #define __round_mask(x, y) ((__typeof__(x))((y)-1))
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
 #define round_down(x, y) ((x) & ~__round_mask(x, y))
+
+/* XXX-BZ not sure where this belongs? */
+#define	upper_32_bits(_i)		(((_i) >> 32) & 0xffffffff)
+#define	lower_32_bits(_i)		((_i) & 0xffffffff)
 
 #define	smp_processor_id()	PCPU_GET(cpuid)
 #define	num_possible_cpus()	mp_ncpus

@@ -28,6 +28,7 @@
 #define	_LINUX_ETHERDEVICE
 
 #include <linux/types.h>
+#include <linux/if_ether.h>
 
 #include <sys/random.h>
 #include <sys/libkern.h>
@@ -86,6 +87,7 @@ ether_addr_equal(const u8 *pa, const u8 *pb)
 {
 	return (memcmp(pa, pb, 6) == 0);
 }
+#define	ether_addr_equal_unaligned(_pa, _pb)	ether_addr_equal((_pa), (_pb))
 
 static inline bool
 ether_addr_equal_64bits(const u8 *pa, const u8 *pb)

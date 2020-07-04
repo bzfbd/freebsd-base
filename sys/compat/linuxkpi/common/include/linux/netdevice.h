@@ -55,7 +55,34 @@
 
 #define	MAX_ADDR_LEN		20
 
+/* XXX FIXME, this does not work. */
 #define	net_device	ifnet
+
+struct netdev_hw_addr_list {
+	struct list_head	addr_list;
+	int			count;
+};
+
+struct netdev_hw_addr {
+	struct list_head	addr_list;
+	uint8_t			addr[6];	/* XXX FIXME */
+};
+
+struct napi_struct {
+		/* XXX TODO */
+	int			poll, rx_count;
+	struct list_head	rx_list;
+};
+
+typedef	uint32_t	netdev_features_t;	/* XXX TODO */
+#define	NETIF_F_CSUM_MASK	__LINE__ /* XXX TODO */
+#define	NETIF_F_HIGHDMA		__LINE__ /* XXX TODO */
+#define	NETIF_F_SG		__LINE__ /* XXX TODO */
+#define	NETIF_F_IPV6_CSUM	__LINE__ /* XXX TODO */
+#define	NETIF_F_IP_CSUM		__LINE__ /* XXX TODO */
+#define	NETIF_F_TSO		__LINE__ /* XXX TODO */
+#define	NETIF_F_TSO6		__LINE__ /* XXX TODO */
+#define	NETIF_F_RXCSUM		__LINE__ /* XXX TODO */
 
 static inline struct ifnet *
 dev_get_by_index(struct vnet *vnet, int if_index)
@@ -92,6 +119,13 @@ static inline struct net_device *
 netdev_notifier_info_to_dev(void *ifp)
 {
 	return (ifp);
+}
+
+static inline void
+netdev_rss_key_fill(uint32_t *buf, size_t len)
+{
+	/* XXX TODO */
+	return;
 }
 
 int	register_netdevice_notifier(struct notifier_block *);
@@ -139,5 +173,75 @@ dev_mc_add(struct net_device *dev, void *addr, int alen, int newonly)
 
 	return -if_addmulti(dev, (struct sockaddr *)&sdl, NULL);
 }
+
+static __inline void
+napi_gro_flush(struct napi_struct *napi, bool t)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+netif_napi_add(struct net_device *ndev, struct napi_struct *napi,
+    int(*napi_poll)(struct napi_struct *, int), int x)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+netif_napi_del(struct napi_struct *napi)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+netif_receive_skb_list(struct list_head *head)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+init_dummy_netdev(struct net_device *napi_dev)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline int
+netdev_hw_addr_list_count(struct netdev_hw_addr_list *list)
+{
+
+	return (list->count);
+}
+
+#define	netdev_hw_addr_list_for_each(_addr, _list)			\
+	list_for_each_entry((_addr), &(_list)->addr_list, addr_list)
+
+
+static __inline void
+synchronize_net(void)
+{
+	/* XXX TODO */
+	return;
+}
+
+/* XXX probably does not belong here. */
+static __inline void
+addrconf_addr_solict_mult(struct in6_addr *ia6, struct in6_addr *solia6)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+get_random_mask_addr(uint8_t *sa, const uint8_t *mac, const uint8_t *mask)
+{
+	/* XXX TODO */
+	return;
+}
+
 
 #endif	/* _LINUX_NETDEVICE_H_ */

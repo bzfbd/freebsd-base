@@ -41,6 +41,8 @@
 struct kobject;
 struct sysctl_oid;
 
+#define	KOBJ_CHANGE		0x01			/* XXX FIXME */
+
 struct kobj_type {
 	void (*release)(struct kobject *kobj);
 	const struct sysfs_ops *sysfs_ops;
@@ -150,5 +152,12 @@ kobject_name(const struct kobject *kobj)
 int	kobject_set_name(struct kobject *kobj, const char *fmt, ...);
 int	kobject_init_and_add(struct kobject *kobj, const struct kobj_type *ktype,
 	    struct kobject *parent, const char *fmt, ...);
+
+static __inline void
+kobject_uevent_env(struct kobject *kobj, int action, char *envp[])
+{
+	/* XXX TODO */
+	return;
+}
 
 #endif /* _LINUX_KOBJECT_H_ */

@@ -51,6 +51,7 @@ MALLOC_DECLARE(M_KMALLOC);
 #define	vzalloc(size)			__vmalloc(size, GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO, 0)
 #define	vfree(arg)			kfree(arg)
 #define	kvfree(arg)			kfree(arg)
+#define	kzfree(arg)			kfree(arg)
 #define	vmalloc_node(size, node)	__vmalloc(size, GFP_KERNEL, 0)
 #define	vmalloc_user(size)		__vmalloc(size, GFP_KERNEL | __GFP_ZERO, 0)
 #define	vmalloc(size)			__vmalloc(size, GFP_KERNEL, 0)
@@ -153,6 +154,14 @@ kfree(const void *ptr)
 {
 	free(__DECONST(void *, ptr), M_KMALLOC);
 }
+
+static __inline size_t
+ksize(void *p)
+{
+	/* XXX TODO */
+	return (-1);
+}
+
 
 extern struct linux_kmem_cache *linux_kmem_cache_create(const char *name,
     size_t size, size_t align, unsigned flags, linux_kmem_ctor_t *ctor);

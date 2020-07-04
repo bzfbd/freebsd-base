@@ -38,6 +38,7 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/errno.h>
+#include <sys/time.h>
 
 static inline int
 sock_create_kern(int family, int type, int proto, struct socket **res)
@@ -74,6 +75,18 @@ static inline void
 sock_release(struct socket *so)
 {
 	soclose(so);
+}
+
+static struct timeval linux_net_lastlog;
+static int linux_net_curpps;
+static int linux_net_maxpps = 999;
+
+static inline int
+net_ratelimit(void)
+{
+
+	return (ppsratecheck(&linux_net_lastlog, &linux_net_curpps,
+	   linux_net_maxpps));
 }
 
 #endif	/* _LINUX_NET_H_ */

@@ -117,6 +117,7 @@ struct device {
 
 	spinlock_t	devres_lock;
 	struct list_head devres_head;
+	/* XXX TODO: bus */
 };
 
 extern struct device linux_root_device;
@@ -179,6 +180,7 @@ show_class_attr_string(struct class *class,
 #define	dev_err(dev, fmt, ...)	device_printf((dev)->bsddev, fmt, ##__VA_ARGS__)
 #define	dev_warn(dev, fmt, ...)	device_printf((dev)->bsddev, fmt, ##__VA_ARGS__)
 #define	dev_info(dev, fmt, ...)	device_printf((dev)->bsddev, fmt, ##__VA_ARGS__)
+#define	dev_crit(dev, fmt, ...)	device_printf((dev)->bsddev, fmt, ##__VA_ARGS__)
 #define	dev_notice(dev, fmt, ...)	device_printf((dev)->bsddev, fmt, ##__VA_ARGS__)
 #define	dev_dbg(dev, fmt, ...)	do { } while (0)
 #define	dev_printk(lvl, dev, fmt, ...)					\
@@ -478,8 +480,23 @@ device_destroy(struct class *class, dev_t devt)
 		device_unregister(device_get_softc(bsddev));
 }
 
+static __inline int
+device_reprobe(struct device *dev)
+{
+	/* XXX TODO */
+	return (ENXIO);
+}
+
 #define	dev_pm_set_driver_flags(dev, flags) do { \
 } while (0)
+
+static inline void
+device_release_driver(struct device *dev)
+{
+
+	/* XXX TDOO? */
+	return;
+}
 
 static inline void
 linux_class_kfree(struct class *class)
@@ -558,5 +575,19 @@ dev_to_node(struct device *dev)
 
 char *kvasprintf(gfp_t, const char *, va_list);
 char *kasprintf(gfp_t, const char *, ...);
+
+#define	devm_kasprintf(_dev, _gfp, _fmt, ...)			\
+    kasprintf((_gfp), (_fmt), ##__VA_ARGS__)
+
+/* XXX no idea where this really belongs ..., do we need to set _late as well? */
+#define	SIMPLE_DEV_PM_OPS(_name, _suspendfunc, _resumefunc)	\
+struct dev_pm_ops _name = {					\
+        .suspend	= _suspendfunc,				\
+        .resume		= _resumefunc,				\
+        .freeze		= _suspendfunc,				\
+        .thaw		= _resumefunc,				\
+        .poweroff	= _suspendfunc,				\
+        .restore	= _resumefunc,				\
+}
 
 #endif	/* _LINUX_DEVICE_H_ */

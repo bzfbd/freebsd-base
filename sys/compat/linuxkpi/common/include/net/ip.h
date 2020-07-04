@@ -43,6 +43,9 @@
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
 
+/* XXX FIXME not sure where this belongs. */
+typedef	uint16_t	__wsum;
+
 static inline void
 inet_get_local_port_range(struct vnet *vnet, int *low, int *high)
 {
@@ -98,6 +101,23 @@ ip_ib_mc_map(uint32_t addr, const unsigned char *bcast, char *buf)
 	buf[17] = (addr >> 16) & 0xff;
 	buf[18] = (addr >> 8) & 0xff;
 	buf[19] = addr & 0xff;
+}
+
+
+/* XXX TODO not sure where this belongs. */
+static __inline uint16_t
+csum_tcpudp_magic(uint32_t saddr, uint32_t daddr,
+    uint32_t len, uint16_t proto, int x)
+{
+	/* XXX TODO */
+	return (0xffff);
+}
+
+static __inline uint16_t
+csum_fold(__wsum csum)
+{
+	/* XXX TODO */
+	return (0xffff);
 }
 
 #endif	/* _LINUX_NET_IP_H_ */

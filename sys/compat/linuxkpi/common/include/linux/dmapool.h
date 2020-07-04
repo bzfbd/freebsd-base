@@ -54,6 +54,14 @@ dma_pool_create(char *name, struct device *dev, size_t size,
 	return (linux_dma_pool_create(name, dev, size, align, boundary));
 }
 
+static __inline struct dma_pool *
+dmam_pool_create(/* const */ char *name, struct device *dev, size_t size,
+    size_t align, size_t boundary)
+{
+
+	return (linux_dma_pool_create(name, dev, size, align, boundary));
+}
+
 static inline void
 dma_pool_destroy(struct dma_pool *pool)
 {

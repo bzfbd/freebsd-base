@@ -54,6 +54,8 @@
 #define	cpu_to_be16(x)	htobe16(x)
 #define	be16_to_cpu(x)	be16toh(x)
 #define	__be16_to_cpu(x)	be16toh(x)
+#define	__le16_to_cpu(x)	le16toh(x)
+#define	__le32_to_cpu(x)	le32toh(x)
 
 #define	cpu_to_le64p(x)	htole64(*((const uint64_t *)(x)))
 #define	le64_to_cpup(x)	le64toh(*((const uint64_t *)(x)))
@@ -81,6 +83,9 @@
 #define	cpu_to_be16s(x)	do { *((uint16_t *)(x)) = cpu_to_be16p((x)); } while (0)
 #define	be16_to_cpus(x)	do { *((uint16_t *)(x)) = be16_to_cpup((x)); } while (0)
 
+#define	__le16_to_cpup(x)	le16_to_cpup((x))
+#define	__le32_to_cpup(x)	le32_to_cpup((x))
+
 #define	swab16(x)	bswap16(x)
 #define	swab32(x)	bswap32(x)
 #define	swab64(x)	bswap64(x)
@@ -89,6 +94,18 @@ static inline void
 be16_add_cpu(uint16_t *var, uint16_t val)
 {
 	*var = cpu_to_be16(be16_to_cpu(*var) + val);
+}
+
+static inline void
+le16_add_cpu(uint16_t *var, uint16_t val)
+{
+	*var = cpu_to_le16(le16_to_cpu(*var) + val);
+}
+
+static __inline void
+le32_add_cpu(uint32_t *var, uint32_t val)
+{
+	*var = cpu_to_le32(le32_to_cpu(*var) + val);
 }
 
 #endif	/* _ASM_BYTEORDER_H_ */

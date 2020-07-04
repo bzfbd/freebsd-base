@@ -73,6 +73,15 @@ struct pci_device_id {
 #define	PCI_BASE_CLASS_BRIDGE		0x06
 #define	PCI_CLASS_BRIDGE_ISA		0x0601
 
+#define	PCIE_LINK_STATE_L0S		0x00000001
+#define	PCIE_LINK_STATE_L1		0x00000002
+#define	PCIE_LINK_STATE_CLKPM		0x00000004
+
+#define	PCI_ERR_ROOT_COMMAND		PCIR_AER_ROOTERR_CMD
+#define	PCI_ERR_ROOT_ERR_SRC		PCIR_AER_COR_SOURCE_ID
+
+#define	PCI_EXT_CAP_ID_ERR		1
+
 #define	PCI_ANY_ID			-1U
 #define	PCI_VENDOR_ID_APPLE		0x106b
 #define	PCI_VENDOR_ID_ASUSTEK		0x1043
@@ -113,8 +122,12 @@ struct pci_device_id {
 
 #define	PCI_VENDOR_ID		PCIR_DEVVENDOR
 #define	PCI_COMMAND		PCIR_COMMAND
+#define	PCI_COMMAND_INTX_DISABLE	PCIM_CMD_INTxDIS
 #define	PCI_EXP_DEVCTL		PCIER_DEVICE_CTL		/* Device Control */
 #define	PCI_EXP_LNKCTL		PCIER_LINK_CTL			/* Link Control */
+#define	PCI_EXP_LNKCTL_ASPM_L0S	PCIEM_LINK_CTL_ASPMC_L0S
+#define	PCI_EXP_LNKCTL_ASPM_L1	PCIEM_LINK_CTL_ASPMC_L1
+#define	PCI_EXP_LNKCTL_CLKREQ_EN PCIEM_LINK_CTL_ECPM		/* Enable clock PM */
 #define	PCI_EXP_FLAGS_TYPE	PCIEM_FLAGS_TYPE		/* Device/Port type */
 #define	PCI_EXP_DEVCAP		PCIER_DEVICE_CAP		/* Device capabilities */
 #define	PCI_EXP_DEVSTA		PCIER_DEVICE_STA		/* Device Status */
@@ -128,6 +141,7 @@ struct pci_device_id {
 #define	PCI_EXP_RTSTA		PCIER_ROOT_STA			/* Root Status */
 #define	PCI_EXP_DEVCAP2		PCIER_DEVICE_CAP2		/* Device Capabilities 2 */
 #define	PCI_EXP_DEVCTL2		PCIER_DEVICE_CTL2		/* Device Control 2 */
+#define	PCI_EXP_DEVCTL2_LTR_EN	PCIEM_CTL2_LTR_ENABLE
 #define	PCI_EXP_LNKCAP2		PCIER_LINK_CAP2			/* Link Capabilities 2 */
 #define	PCI_EXP_LNKCTL2		PCIER_LINK_CTL2			/* Link Control 2 */
 #define	PCI_EXP_LNKSTA2		PCIER_LINK_STA2			/* Link Status 2 */
@@ -185,6 +199,9 @@ typedef int pci_power_t;
 #define PCI_D3hot	PCI_POWERSTATE_D3
 #define PCI_D3cold	4
 
+#define	PCI_IRQ_LEGACY		0x01	/* XXX ? */
+#define	PCI_IRQ_MSI		0x02	/* XXX ? */
+
 #define PCI_POWER_ERROR	PCI_POWERSTATE_UNKNOWN
 
 struct pci_dev;
@@ -222,6 +239,25 @@ extern spinlock_t pci_lock;
 
 #define	__devexit_p(x)	x
 
+#define	module_pci_driver(_driver)					\
+									\
+static __inline int							\
+_pci_init(void)								\
+{									\
+									\
+	return (pci_register_driver(&_driver));				\
+}									\
+									\
+static __inline void							\
+_pci_exit(void)								\
+{									\
+									\
+	pci_unregister_driver(&_driver);				\
+}									\
+									\
+module_init(_pci_init);							\
+module_exit(_pci_exit)
+
 struct pci_mmio_region {
 	TAILQ_ENTRY(pci_mmio_region)	next;
 	struct resource			*res;
@@ -245,6 +281,7 @@ struct pci_dev {
 	bool			msi_enabled;
 
 	TAILQ_HEAD(, pci_mmio_region)	mmio;
+	void			*mmio_table[PCIR_MAX_BAR_0 + 1];
 };
 
 static inline struct resource_list_entry *
@@ -381,16 +418,27 @@ pci_clear_master(struct pci_dev *pdev)
 static inline int
 pci_request_region(struct pci_dev *pdev, int bar, const char *res_name)
 {
+	struct resource *res;
 	int rid;
 	int type;
+
+	if (pdev->mmio_table[bar] != NULL)
+		return (0);
 
 	type = pci_resource_type(pdev, bar);
 	if (type < 0)
 		return (-ENODEV);
 	rid = PCIR_BAR(bar);
-	if (bus_alloc_resource_any(pdev->dev.bsddev, type, &rid,
-	    RF_ACTIVE) == NULL)
+	res = bus_alloc_resource_any(pdev->dev.bsddev, type, &rid,
+	    RF_ACTIVE|RF_SHAREABLE);
+	if (res == NULL)
 		return (-EINVAL);
+	/*
+	 * Linux drivers seem to expect the start of the resource to be in the
+	 * table.  The do readX and writeX directly on the address.  We need
+	 * the resource and change the read/write function into bus_read/write.
+	 */
+	pdev->mmio_table[bar] = res;
 	return (0);
 }
 
@@ -402,6 +450,7 @@ pci_release_region(struct pci_dev *pdev, int bar)
 	if ((rle = linux_pci_get_bar(pdev, bar)) == NULL)
 		return;
 	bus_release_resource(pdev->dev.bsddev, rle->type, rle->rid, rle->res);
+	pdev->mmio_table[bar] = NULL;
 }
 
 static inline void
@@ -669,35 +718,55 @@ static inline void pci_disable_sriov(struct pci_dev *dev)
 }
 
 static inline void *
-pci_iomap(struct pci_dev *dev, int mmio_bar, int mmio_size __unused)
+pci_iomap(struct pci_dev *pdev, int mmio_bar, int mmio_size)
 {
 	struct pci_mmio_region *mmio;
+	int type;
+
+	/* If already mapped, return it straight away. */
+	if (pdev->mmio_table[mmio_bar] != NULL)
+		return (pdev->mmio_table[mmio_bar]);
+
+	type = pci_resource_type(pdev, mmio_bar);
+	if (type < 0)
+		return (NULL);
 
 	mmio = malloc(sizeof(*mmio), M_DEVBUF, M_WAITOK | M_ZERO);
 	mmio->rid = PCIR_BAR(mmio_bar);
-	mmio->type = pci_resource_type(dev, mmio_bar);
-	mmio->res = bus_alloc_resource_any(dev->dev.bsddev, mmio->type,
-	    &mmio->rid, RF_ACTIVE);
+	mmio->type = type;
+	if (mmio->type < 0) {
+		free(mmio, M_DEVBUF);
+		return (NULL);
+	}
+	mmio->res = bus_alloc_resource_any(pdev->dev.bsddev, mmio->type,
+	    &mmio->rid, RF_ACTIVE|RF_SHAREABLE);
 	if (mmio->res == NULL) {
 		free(mmio, M_DEVBUF);
 		return (NULL);
 	}
-	TAILQ_INSERT_TAIL(&dev->mmio, mmio, next);
+	TAILQ_INSERT_TAIL(&pdev->mmio, mmio, next);
+	/*
+	 * Linux drivers seem to expect the start of the resource to be in the
+	 * table.  The do readX and writeX directly on the address.  We need
+	 * the resource and change the read/write function into bus_read/write.
+	 */
+	pdev->mmio_table[mmio_bar] = mmio->res;
 
-	return ((void *)rman_get_bushandle(mmio->res));
+	return (pdev->mmio_table[mmio_bar]);
 }
 
 static inline void
-pci_iounmap(struct pci_dev *dev, void *res)
+pci_iounmap(struct pci_dev *pdev, void *res)
 {
 	struct pci_mmio_region *mmio, *p;
 
-	TAILQ_FOREACH_SAFE(mmio, &dev->mmio, next, p) {
-		if (res != (void *)rman_get_bushandle(mmio->res))
+	TAILQ_FOREACH_SAFE(mmio, &pdev->mmio, next, p) {
+		if (res != pdev->mmio_table[PCI_RID2BAR(mmio->rid)])
 			continue;
-		bus_release_resource(dev->dev.bsddev,
+		bus_release_resource(pdev->dev.bsddev,
 		    mmio->type, mmio->rid, mmio->res);
-		TAILQ_REMOVE(&dev->mmio, mmio, next);
+		TAILQ_REMOVE(&pdev->mmio, mmio, next);
+		pdev->mmio_table[PCI_RID2BAR(mmio->rid)] = NULL;
 		free(mmio, M_DEVBUF);
 		return;
 	}
@@ -1060,6 +1129,143 @@ pci_dev_present(const struct pci_device_id *cur)
 		cur++;
 	}
 	return (0);
+}
+
+static __inline void
+pci_dev_get(struct pci_dev *pdev)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+pci_dev_put(struct pci_dev *pdev)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+pci_disable_link_state(struct pci_dev *pdev, uint32_t flags)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline uint32_t
+pci_find_ext_capability(struct pci_dev *pdev, uint32_t flags)
+{
+	/* XXX TODO */
+	return (-1);
+}
+
+static __inline void
+pci_lock_rescan_remove(void)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline bool
+pci_pme_capable(struct pci_dev *pdev, uint32_t flags)
+{
+	/* XXX TODO */
+	return (false);
+}
+
+static __inline void
+pci_stop_and_remove_bus_device(struct pci_dev *pdev)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void
+pci_unlock_rescan_remove(void)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline struct pci_dev *
+pcie_find_root_port(struct pci_dev *pdev)
+{
+	/* XXX TODO */
+	return (NULL);
+}
+
+static __inline int
+pcim_enable_device(struct pci_dev *pdev)
+{
+	/* XXX TODO FIXME */
+	return (pci_enable_device(pdev));
+}
+
+static __inline int
+pcim_iomap_regions_request_all(struct pci_dev *pdev, uint32_t mask, char *name)
+{
+	void *res;
+	uint32_t mappings;
+	int i;
+
+	for (i = mappings = 0; mappings != mask; i++) {
+		if ((mask & (1<<i)) == 0)
+			continue;
+
+		/* Request double is not allowed. */
+		if (pdev->mmio_table[i] != NULL)
+			goto err;
+
+		res = pci_iomap(pdev, i, 0);
+		if (res == NULL)
+			goto err;
+
+		mappings |= (1<<i);
+	}
+
+	return (0);
+
+err:
+	for (; i >= 0; i--) {
+		if ((mappings & (1<<i)) == 0)
+			continue;
+
+		res = pdev->mmio_table[i];
+		if (res == NULL)
+			continue;
+
+		pci_iounmap(pdev, res);
+	}
+
+	return (-EINVAL);
+}
+
+static __inline void __iomem **
+pcim_iomap_table(struct pci_dev *pdev)
+{
+
+	return (pdev->mmio_table);
+}
+
+static __inline int
+pci_alloc_irq_vectors(struct pci_dev *pdev, int x, int y, unsigned int flags)
+{
+	/* XXX TODO */
+	return (-1);
+}
+
+static __inline void
+pci_free_irq_vectors(struct pci_dev *pdev)
+{
+	/* XXX TODO */
+	return;
+}
+
+static __inline void *
+pci_zalloc_consistent(struct pci_dev *pdev, int size, dma_addr_t *dma_handle)
+{
+
+	return (dma_alloc_coherent(&pdev->dev, size, dma_handle, GFP_ATOMIC));
 }
 
 #endif	/* _LINUX_PCI_H_ */

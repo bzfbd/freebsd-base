@@ -54,9 +54,11 @@
 
 #define	__MODULE_STRING(x) __stringify(x)
 
-/* OFED pre-module initialization */
+/* XXX TODO FIXME.
+ * This should be LINUXKPI and go into kernel.h or be defined some other way. */
+/* LINUXKPI pre-module initialization */
 #define	SI_SUB_OFED_PREINIT	(SI_SUB_ROOT_CONF - 2)
-/* OFED default module initialization */
+/* LINUXKPI default module initialization */
 #define	SI_SUB_OFED_MODINIT	(SI_SUB_ROOT_CONF - 1)
 
 #include <sys/linker.h>
@@ -65,7 +67,7 @@ static inline void
 _module_run(void *arg)
 {
 	void (*fn)(void);
-#ifdef OFED_DEBUG_INIT
+#ifdef LINUXKPI_DEBUG_INIT
 	char name[1024];
 	caddr_t pc;
 	long offset;
@@ -101,5 +103,14 @@ _module_run(void *arg)
 #define	try_module_get(module)	1
 
 #define	postcore_initcall(fn)	module_init(fn)
+
+/* XXX-BZ whatever they do with the _dev, I don't know yet. */
+#define	devm_kmalloc(_dev, _size, _gfp)				\
+    kmalloc((_size), (_gfp))
+
+#define	devm_kzalloc(_dev, _size, _gfp)				\
+    devm_kmalloc((_dev), (_size), (_gfp) | __GFP_ZERO)
+
+#define	KBUILD_MODNAME		"FIXME N/A"
 
 #endif	/* _LINUX_MODULE_H_ */

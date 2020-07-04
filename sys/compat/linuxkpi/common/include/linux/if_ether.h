@@ -51,5 +51,12 @@
 #define	ETH_P_MPLS_MC	ETHERTYPE_MPLS_MCAST
 #define	ETH_P_8021Q	ETHERTYPE_VLAN
 #define	ETH_P_8021AD	ETHERTYPE_QINQ
+#define	ETH_P_PAE	ETHERTYPE_PAE
+
+struct ethhdr {
+	uint8_t		eh_dhost[ETH_ALEN];	/* XXX TODO */
+	uint8_t		eh_shost[ETH_ALEN];	/* XXX TODO */
+	uint16_t	eh_type;		/* XXX TODO */
+} __packed;
 
 #endif	/* _LINUX_IF_ETHER_H_ */

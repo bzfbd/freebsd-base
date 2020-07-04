@@ -34,6 +34,18 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <linux/types.h>
+#include <linux/bitops.h>
+
+struct ipv6hdr {
+	uint8_t			nexthdr;
+	struct in6_addr		saddr, daddr;
+};
+
+/* Best guessing what this could be. */
+struct ipv6_opt_hdr {
+	uint8_t			nexthdr;
+	uint8_t			hdrlen;
+};
 
 #define	IPV6_DEFAULT_HOPLIMIT 64
 
@@ -110,5 +122,19 @@ static inline int ipv6_addr_cmp(const struct in6_addr *a1, const struct in6_addr
 	return memcmp(a1, a2, sizeof(struct in6_addr));
 }
 
+static __inline bool
+ipv6_ext_hdr(uint16_t protocol)
+{
+	/* XXX TODO */
+	return (false);
+}
+
+static __inline int
+ipv6_optlen(struct ipv6_opt_hdr *hp)
+{
+
+	/* RFC 6564, in 8-octet units not including the first 8 octets. */
+	return ((hp->hdrlen + 1) << 4);
+}
 
 #endif	/* _LINUX_NET_IPV6_H_ */

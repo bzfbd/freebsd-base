@@ -187,6 +187,8 @@ SUBDIR=	\
 	${_itwd} \
 	${_iwi} \
 	${_iwifw} \
+	${_iwlwifi} \
+	${_iwlwififw} \
 	${_iwm} \
 	${_iwmfw} \
 	${_iwn} \
@@ -665,11 +667,13 @@ _ips=		ips
 _isci=		isci
 _ipw=		ipw
 _iwi=		iwi
+_iwlwifi=	iwlwifi
 _iwm=		iwm
 _iwn=		iwn
 .if ${MK_SOURCELESS_UCODE} != "no"
 _ipwfw=		ipwfw
 _iwifw=		iwifw
+_iwlwififw=	iwlwififw
 _iwmfw=		iwmfw
 _iwnfw=		iwnfw
 .endif

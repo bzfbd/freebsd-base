@@ -1,0 +1,273 @@
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Copyright (c) 2020 The FreeBSD Foundation
+ *
+ * This software was developed by Björn Zeeb under sponsorship from
+ * the FreeBSD Foundation.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $FreeBSD$
+ */
+
+#ifndef	_LINUX_IEEE80211_H
+#define	_LINUX_IEEE80211_H
+
+#include <asm/unaligned.h>
+#include <linux/bitops.h>
+#include <linux/if_ether.h>
+
+#define	IEEE80211_CCMP_HDR_LEN			8	/* 802.11i .. net80211 comment */
+#define	IEEE80211_CCMP_PN_LEN			6
+#define	IEEE80211_CCMP_MIC_LEN			8	/* || 16 */
+#define	IEEE80211_CHANCTX_CHANGE_MIN_WIDTH	__LINE__ /* TODO FIXME */
+#define	IEEE80211_CHANCTX_CHANGE_RADAR		__LINE__ /* TODO FIXME */
+#define	IEEE80211_CHANCTX_CHANGE_RX_CHAINS	__LINE__ /* TODO FIXME */
+#define	IEEE80211_CHANCTX_CHANGE_WIDTH		__LINE__ /* TODO FIXME */
+
+#define	IEEE80211_FRAME_RELEASE_PSPOLL		__LINE__ /* TODO FIXME */
+#define	IEEE80211_FRAME_RELEASE_UAPSD		__LINE__ /* TODO FIXME */
+#define	IEEE80211_GCMP_HDR_LEN			__LINE__ /* TODO FIXME */
+
+#define	IEEE80211_HT_MPDU_DENSITY_4		__LINE__ /* TODO FIXME */
+#define	IEEE80211_INVAL_HW_QUEUE		((uint8_t)-1)
+#define	IEEE80211_KEY_FLAG_GENERATE_MMIC	__LINE__ /* TODO FIXME */
+#define	IEEE80211_KEY_FLAG_PAIRWISE		__LINE__ /* TODO FIXME */
+#define	IEEE80211_KEY_FLAG_PUT_IV_SPACE		__LINE__ /* TODO FIXME */
+#define	IEEE80211_KEY_FLAG_PUT_MIC_SPACE	__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_AMPDU_BUF			__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_DATA_LEN			__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_MPDU_LEN_HT_3839		__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_MPDU_LEN_HT_BA		__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_MPDU_LEN_VHT_11454	__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_MPDU_LEN_VHT_3895		__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_MPDU_LEN_VHT_7991		__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_QUEUES			__LINE__ /* TODO FIXME */
+#define	IEEE80211_MAX_RTS_THRESHOLD		__LINE__ /* TODO FIXME */
+#define	IEEE80211_MIN_ACTION_SIZE		__LINE__ /* TODO FIXME */
+#define	IEEE80211_NUM_ACS			__LINE__ /* TODO FIXME */
+#define	IEEE80211_P2P_OPPPS_CTWINDOW_MASK	__LINE__ /* TODO FIXME */
+#define	IEEE80211_P2P_OPPPS_ENABLE_BIT		__LINE__ /* TODO FIXME */
+#define	IEEE80211_QOS_CTL_A_MSDU_PRESENT	__LINE__ /* TODO FIXME */
+#define	IEEE80211_RATE_SHORT_PREAMBLE		__LINE__ /* TODO FIXME */
+#define	IEEE80211_RC_BW_CHANGED			__LINE__ /* TODO FIXME */
+#define	IEEE80211_RC_NSS_CHANGED		__LINE__ /* TODO FIXME */
+#define	IEEE80211_RC_SUPP_RATES_CHANGED		__LINE__ /* TODO FIXME */
+#define	IEEE80211_SCTL_FRAG			__LINE__ /* TODO FIXME */
+#define	IEEE80211_SCTL_SEQ			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_ASSOC			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_AUTH			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_AUTHORIZED		__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_NONE			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_NOTEXIST			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_RX_BW_160			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_RX_BW_20			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_RX_BW_40			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STA_RX_BW_80			__LINE__ /* TODO FIXME */
+#define	IEEE80211_STYPE_PROBE_REQ		__LINE__ /* TODO FIXME */
+#define	IEEE80211_TKIP_ICV_LEN			__LINE__ /* TODO FIXME */
+#define	IEEE80211_TKIP_IV_LEN			8	/* WEP + KID + EXT */
+#define	IEEE80211_VHT_EXT_NSS_BW_CAPABLE	__LINE__ /* TODO FIXME */
+#define	IEEE80211_VHT_MAX_AMPDU_1024K		__LINE__ /* TODO FIXME */
+#define	IEEE80211_VIF_BEACON_FILTER		__LINE__ /* TODO FIXME */
+#define	IEEE80211_VIF_SUPPORTS_CQM_RSSI		__LINE__ /* TODO FIXME */
+#define	IEEE80211_VIF_SUPPORTS_UAPSD		__LINE__ /* TODO FIXME */
+#define	IEEE80211_WEP_IV_LEN			3	/* net80211: IEEE80211_WEP_IVLEN */
+#define	IEEE80211_WEP_ICV_LEN			__LINE__ /* TODO FIXME */
+#define	IEEE80211_WMM_IE_STA_QOSINFO_AC_BE	__LINE__ /* TODO FIXME */
+#define	IEEE80211_WMM_IE_STA_QOSINFO_AC_BK	__LINE__ /* TODO FIXME */
+#define	IEEE80211_WMM_IE_STA_QOSINFO_AC_VI	__LINE__ /* TODO FIXME */
+#define	IEEE80211_WMM_IE_STA_QOSINFO_AC_VO	__LINE__ /* TODO FIXME */
+#define	IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL	__LINE__ /* TODO FIXME */
+
+#include <sys/types.h>
+#include <net80211/ieee80211.h>
+
+#define	IEEE80211_MAX_SSID_LEN		32		/* 9.4.2.2 SSID element, net80211: IEEE80211_NWID_LEN */
+
+#define	IEEE80211_MAX_AMPDU_BUF_HT		0x40
+
+/* Figure 9-27, BAR Control field */
+#define	IEEE80211_BAR_CTRL_TID_INFO_MASK	0xf000
+#define	IEEE80211_BAR_CTRL_TID_INFO_SHIFT	12
+
+#define	IEEE80211_PPE_THRES_INFO_PPET_SIZE		1 /* TODO FIXME ax? */
+#define	IEEE80211_PPE_THRES_NSS_MASK			2 /* TODO FIXME ax? */
+#define	IEEE80211_PPE_THRES_RU_INDEX_BITMASK_POS	3 /* TODO FIXME ax? */
+#define	IEEE80211_PPE_THRES_RU_INDEX_BITMASK_MASK	8 /* TODO FIXME ax? */
+
+#define	IEEE80211_HT_OP_MODE_PROTECTION			0x03	/* MASK */
+#define	IEEE80211_HT_OP_MODE_PROTECTION_NONE		0x00
+#define	IEEE80211_HT_OP_MODE_PROTECTION_20MHZ		0x01
+#define	IEEE80211_HT_OP_MODE_PROTECTION_NONHT_MIXED	0x02
+#define	IEEE80211_HT_OP_MODE_PROTECTION_NONMEMBER	0x03
+
+/* 9.4.2.27, Table 9-135. Extended Capabilities field. */
+/* This is split up into octets CAPA1 = octet 1, ... */
+#define	WLAN_EXT_CAPA1_EXT_CHANNEL_SWITCHING			BIT(2  % 8)
+#define	WLAN_EXT_CAPA3_MULTI_BSSID_SUPPORT			BIT(22 % 8)
+#define	WLAN_EXT_CAPA8_OPMODE_NOTIF				BIT(62 % 8)
+#define	WLAN_EXT_CAPA10_TWT_REQUESTER_SUPPORT			BIT(5)		/* XXX */
+#define	WLAN_EXT_CAPA10_OBSS_NARROW_BW_RU_TOLERANCE_SUPPORT	BIT(7)		/* XXX */
+
+enum ieee80211_ac_numbers {
+	IEEE80211_AC_BE		= WME_AC_BE,
+	IEEE80211_AC_BK		= WME_AC_BK,
+	IEEE80211_AC_VI		= WME_AC_VI,
+	IEEE80211_AC_VO		= WME_AC_VO
+};
+
+enum ieee80211_ht_max_ampdu_len {
+	IEEE80211_HT_MAX_AMPDU_64K
+};
+
+enum ieee80211_ampdu_mlme_action {
+	IEEE80211_AMPDU_RX_START,
+	IEEE80211_AMPDU_RX_STOP,
+	IEEE80211_AMPDU_TX_OPERATIONAL,
+	IEEE80211_AMPDU_TX_START,
+	IEEE80211_AMPDU_TX_START_IMMEDIATE,
+	IEEE80211_AMPDU_TX_STOP_CONT,
+	IEEE80211_AMPDU_TX_STOP_FLUSH,
+	IEEE80211_AMPDU_TX_STOP_FLUSH_CONT
+};
+
+enum ieee80211_chanctx_switch_mode {
+	CHANCTX_SWMODE_REASSIGN_VIF,
+	CHANCTX_SWMODE_SWAP_CONTEXTS,
+};
+
+enum ieee80211_frame_release_type {
+	ieee80211_frame_release_type_FOO,	/* XXX TODO */
+};
+
+enum ieee80211_reconfig_type {
+	IEEE80211_RECONFIG_TYPE_RESTART,
+	IEEE80211_RECONFIG_TYPE_SUSPEND,
+};
+
+enum ieee80211_roc_type {
+	IEEE80211_ROC_TYPE_MGMT_TX,
+	IEEE80211_ROC_TYPE_NORMAL,
+};
+
+enum ieee80211_rssi_event_data {
+	ieee80211_rssi_event_data_FOO,	/* XXX TODO */
+};
+
+enum ieee80211_smps_mode {
+	IEEE80211_SMPS_OFF,
+	IEEE80211_SMPS_STATIC,
+	IEEE80211_SMPS_DYNAMIC,
+	IEEE80211_SMPS_AUTOMATIC,
+	IEEE80211_SMPS_NUM_MODES,
+};
+
+enum ieee80211_sta_state {
+	ieee80211_sta_state_FOO,	/* XXX TODO */
+};
+
+enum ieee80211_tx_info_flags {
+	/* XXX TODO .. right shift numbers */
+	IEEE80211_TX_CTL_AMPDU			= BIT(0),
+	IEEE80211_TX_CTL_ASSIGN_SEQ		= BIT(1),
+	IEEE80211_TX_CTL_NO_ACK			= BIT(2),
+	IEEE80211_TX_CTL_SEND_AFTER_DTIM	= BIT(3),
+	IEEE80211_TX_CTL_TX_OFFCHAN		= BIT(4),
+	IEEE80211_TX_STATUS_EOSP		= BIT(5),
+	IEEE80211_TX_STAT_ACK			= BIT(6),
+	IEEE80211_TX_STAT_AMPDU			= BIT(7),
+	IEEE80211_TX_STAT_AMPDU_NO_BACK		= BIT(8),
+	IEEE80211_TX_STAT_TX_FILTERED		= BIT(9),
+};
+
+enum ieee80211_tx_control_flags {
+	/* XXX TODO .. right shift numbers */
+	IEEE80211_TX_CTRL_PORT_CTRL_PROTO	= BIT(0),
+};
+
+enum ieee80211_tx_rate_flags {
+	/* XXX TODO .. right shift numbers */
+	IEEE80211_TX_RC_40_MHZ_WIDTH		= BIT(0),
+	IEEE80211_TX_RC_80_MHZ_WIDTH		= BIT(1),
+	IEEE80211_TX_RC_160_MHZ_WIDTH		= BIT(2),
+	IEEE80211_TX_RC_GREEN_FIELD		= BIT(3),
+	IEEE80211_TX_RC_MCS			= BIT(4),
+	IEEE80211_TX_RC_SHORT_GI		= BIT(5),
+	IEEE80211_TX_RC_VHT_MCS			= BIT(6),
+};
+
+struct ieee80211_hdr {
+	/* TODO FIXME */
+	uint8_t		addr1[ETH_ALEN], addr2[ETH_ALEN], addr3[ETH_ALEN], addr4[ETH_ALEN]; /* based on iwl_mvm_flip_address() */
+	int		frame_control, seq_ctrl;
+};
+
+struct ieee80211_vendor_ie {
+};
+
+#define	MHZ_TO_KHZ(_f)		((_f) * 1000)
+#define	DBI_TO_MBI(_g)		((_g) * 100)
+#define	DBM_TO_MBM(_g)		((_g) * 100)
+
+#define	IEEE80211_SEQ_TO_SN(_seqn)	(0)	/* XXX FIXME */
+
+/* Time unit (TU) to .. See net80211: IEEE80211_DUR_TU */
+#define	TU_TO_JIFFIES(_tu)	(usecs_to_jiffies(_tu) * 1024)
+#define	TU_TO_EXP_TIME(_tu)	(jiffies + TU_TO_JIFFIES(_tu))
+
+/* 9.4.2.21.1, Table 9-82. */
+#define	IEEE80211_SPCT_MSR_RPRT_TYPE_LCI	8
+#define	IEEE80211_SPCT_MSR_RPRT_TYPE_CIVIC	11
+
+/* 9.4.2.1, Table 9-77. Element IDs. */
+enum ieee80211_eid {
+	WLAN_EID_SSID				= 0,
+	WLAN_EID_SUPP_RATES			= 1,
+	WLAN_EID_DS_PARAMS			= 3,
+	WLAN_EID_TIM				= 5,
+	WLAN_EID_REQUEST			= 10,
+	WLAN_EID_CHANNEL_SWITCH			= 37,
+	WLAN_EID_MEASURE_REPORT			= 39,
+	WLAN_EID_EXT_SUPP_RATES			= 50,
+	WLAN_EID_EXT_CHANSWITCH_ANN		= 60,
+	WLAN_EID_EXT_CAPABILITY			= 127,
+	WLAN_EID_VENDOR_SPECIFIC		= 221,
+};
+
+/* 9.4.1.7, Table 9-45. Reason codes. */
+enum ieee80211_reason_code {
+	WLAN_REASON_TDLS_TEARDOWN_UNSPECIFIED	= 26,
+};
+
+
+static __inline unsigned int
+ieee80211_hdrlen(uint16_t fc)
+{
+	/* XXX TODO */
+	return (-1);
+}
+
+#endif	/* _LINUX_IEEE80211_H */
+
+/* end */

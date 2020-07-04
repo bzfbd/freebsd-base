@@ -68,6 +68,9 @@
 #define	noinline			__noinline
 #define	____cacheline_aligned		__aligned(CACHE_LINE_SIZE)
 
+/* XXX-BZ why would I let this undef in non-SMP cases? */
+#define	____cacheline_aligned_in_smp	__aligned(CACHE_LINE_SIZE)
+
 #define	likely(x)			__builtin_expect(!!(x), 1)
 #define	unlikely(x)			__builtin_expect(!!(x), 0)
 #define typeof(x)			__typeof(x)
@@ -80,6 +83,7 @@
 #define	__printf(a,b)			__printflike(a,b)
 
 #define	barrier()			__asm__ __volatile__("": : :"memory")
+#define	smp_mb()			mb()
 
 #if defined(LINUXKPI_VERSION) && LINUXKPI_VERSION >= 50000
 /* Moved from drm_os_freebsd.h */

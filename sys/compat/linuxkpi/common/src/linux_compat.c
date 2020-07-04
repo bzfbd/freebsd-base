@@ -66,6 +66,7 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #include <linux/kobject.h>
+#include <linux/cpu.h>
 #include <linux/device.h>
 #include <linux/slab.h>
 #include <linux/module.h>
@@ -110,12 +111,14 @@ MALLOC_DEFINE(M_KMALLOC, "linux", "Linux kmalloc compat");
 static void linux_cdev_deref(struct linux_cdev *ldev);
 static struct vm_area_struct *linux_cdev_handle_find(void *handle);
 
+cpumask_t cpu_online_mask;	/* XXX TODO */
 struct kobject linux_class_root;
 struct device linux_root_device;
 struct class linux_class_misc;
 struct list_head pci_drivers;
 struct list_head pci_devices;
 spinlock_t pci_lock;
+struct proc *linux_irq_proc;
 
 unsigned long linux_timer_hz_mask;
 
@@ -258,7 +261,10 @@ static void
 linux_device_release(struct device *dev)
 {
 	pr_debug("linux_device_release: %s\n", dev_name(dev));
-	kfree(dev);
+	KASSERT((dev->release != NULL), ("%s: dev %p (%s) ->release is %p\n",
+	     __func__, dev, dev_name(dev), dev->release));
+	dev->release(dev);
+	/* dev should be freed ... */
 }
 
 static ssize_t
@@ -2364,14 +2370,71 @@ list_sort(void *priv, struct list_head *head, int (*cmp)(void *priv,
 }
 
 void
+linux_irq_worker(void *ent)
+{
+	struct irq_ent *irqe;
+	int rc;
+
+	irqe = ent;
+
+	mtx_lock(&irqe->td_lock);
+	MPASS(irqe->thread_handler != NULL);
+	MPASS(irqe->td_state == 0);
+	irqe->td_state = IRQETD_RUNNING;
+	cv_signal(&irqe->td_cv);
+
+	do {
+		while (irqe->td_level > 0) {
+			irqe->td_level--;
+			mtx_unlock(&irqe->td_lock);
+			/* Run the threadded interrupt handler. */
+			rc = irqe->thread_handler(irqe->irq, irqe->arg);
+			if (rc != IRQ_HANDLED)
+				device_printf(irqe->dev->bsddev, "%s: "
+				    "thread_handler returned %d (%s)\n",
+				    __func__, rc,
+				    (rc == IRQ_HANDLED) ? "IRQ_HANDLED" :
+					(rc == IRQ_WAKE_THREAD) ?
+					"IRQ_WAKE_THREAD" : "???");
+			mtx_lock(&irqe->td_lock);
+		}
+
+		if (irqe->td_state == IRQETD_STOP)
+			break;
+
+		irqe->td_state = IRQETD_SLEEPING;
+		cv_wait(&irqe->td_cv, &irqe->td_lock);
+
+	} while (irqe->td_state != IRQETD_STOP);
+
+	mtx_assert(&irqe->td_lock, MA_OWNED);
+	irqe->td_state = IRQETD_STOPPED;
+	cv_signal(&irqe->td_cv);
+	mtx_unlock(&irqe->td_lock);
+	kthread_exit();
+}
+
+void
 linux_irq_handler(void *ent)
 {
 	struct irq_ent *irqe;
+	irqreturn_t rc;
 
 	linux_set_current(curthread);
 
 	irqe = ent;
-	irqe->handler(irqe->irq, irqe->arg);
+	rc = irqe->handler(irqe->irq, irqe->arg);
+	if (rc == IRQ_WAKE_THREAD) {
+		if (irqe->thread_handler != NULL) {
+			mtx_lock(&irqe->td_lock);
+			irqe->td_level++;
+			if (irqe->td_state == IRQETD_SLEEPING) {
+				irqe->td_state = IRQETD_RUNNING;
+				cv_signal(&irqe->td_cv);
+			}
+			mtx_unlock(&irqe->td_lock);
+		}
+	}
 }
 
 #if defined(__i386__) || defined(__amd64__)

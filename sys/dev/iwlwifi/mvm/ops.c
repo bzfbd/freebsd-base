@@ -636,6 +636,12 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 	 */
 	BUILD_BUG_ON(ARRAY_SIZE(mvm->fw_id_to_mac_id) != IWL_MVM_STATION_COUNT);
 
+	uprintf("HOORAY IWLWIFI LOADED. Check dmesg for:\n"
+	   "  iwlwifi0: loaded firmware version ...ucode op_mode iwlmvm\n"
+	   "  iwlwifi0: Detcted..\n"
+	   "  iwlwifi0: base HW address..\n"
+	   "lines. If you cannot find them please report back.\n");
+
 	/********************************
 	 * 1. Allocating and configuring HW data
 	 ********************************/
